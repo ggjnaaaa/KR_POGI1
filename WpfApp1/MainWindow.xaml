@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:WpfApp1"
         mc:Ignorable="d"
-        Title="Сапёр" Height="800" Width="1300" WindowStyle="ToolWindow">
+        Title="Сапёр" Height="244" Width="656" WindowStyle="ToolWindow">
     <Grid x:Name="start" Height="auto" Width="auto">
         <TextBlock x:Name="diff" Text="Выберите сложность!"  Width="480" Height="80" FontSize="48" VerticalAlignment="Center" HorizontalAlignment="Center"/>
         <Grid Background="LightGray" Height="30" VerticalAlignment="Bottom">
@@ -13,12 +13,10 @@
             <Button Content="Средне (16 х 16, 40 мин)" Height="30" Width="210" FontSize="18" Click="medium_click" HorizontalAlignment="Center" VerticalAlignment="Bottom"/>
             <Button Content="Сложно (30 х 16, 99 мин)" Height="30" Width="210" FontSize="18" Click="hard_click" VerticalAlignment="Bottom" HorizontalAlignment="Right"/>
         </Grid>
-        <Grid Background="LightGray" Height="30" VerticalAlignment="Top">
-            <TextBlock Text="Для новой игры выберите сложность. Секундомер включится при нажатии кнопки на поле" FontSize="16" Width="700" Height="25" HorizontalAlignment="Left" Margin="10,0,0,0"/>
+        <Grid Background="LightGray" Height="53" VerticalAlignment="Top">
+            <TextBlock x:Name="info" Text="Для новой игры выберите сложность. Секундомер включится при нажатии кнопки на поле" FontSize="16" Margin="10,2,120,0" TextWrapping="Wrap"/>
             <Label Name="timer" Content="00:00:00" HorizontalAlignment="Right" Width="80" Height="25" FontSize="14" Background="Gray"/>
         </Grid>
-        <UniformGrid x:Name="ugr" Height="600" Width="1000" Background="Transparent">
-
-        </UniformGrid>
+        <UniformGrid x:Name="ugr" Background="Transparent" Margin="10,74,10,35"/>
     </Grid>
 </Window>

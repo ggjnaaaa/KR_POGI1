@@ -1,17 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 using System.Windows.Threading;
 using System.Diagnostics;
 
@@ -40,249 +32,406 @@ namespace WpfApp1
             }
         }
 
-        public int kNums; 
+        int numberOfOpenCells;
+        int numberOfMines;
+        Button[,] buttons;
+        object originalContentValue; // Нужно для возвращения исходного значения контента при снятии флажка с кнопки
+        object markContentValue; // Нужно для сравнения значения контента при проверке наличия флажка
 
-        public int i, j, m, q;
+        int mineValue = -9; // Как обозначаются мины в массиве
+        int edgesValue = -3; // Как обозначаются края массива
 
-        public int[,] nums;
-
-        public int status;
+        int status;
         //статус игры:
         //0-начало
         //1-активная игра
         //2-проигрыш или выигрыш
 
+        // Выбрана лёгкая сложность
         public void eazy_click(object sender, RoutedEventArgs e)
         {
-            if (sw.IsRunning)
-            {
-                sw.Stop();
-            }
-            ugr.Children.Clear();
-            timer.Content = "00:00:00";
-            i = 10;
-            j = 10;
-            m = 10;
-            nums = new int[12, 12];
-            status = 0;
-            mi();
+            NewGame();
+
+            numberOfMines = 10;
+            int[,] nums = new int[12, 12];
+            MineGeneration(nums);
         }
 
+        // Выбрана средняя сложность
         public void medium_click(object sender, RoutedEventArgs e)
         {
-            if (sw.IsRunning)
-            {
-                sw.Stop();
-            }
-            ugr.Children.Clear();
-            timer.Content = "00:00:00";
-            i = 16;
-            j = 16;
-            m = 40;
-            nums = new int[18, 18];
-            status = 0;
-            mi();
+            NewGame();
+
+            numberOfMines = 40;
+            int[,] nums = new int[18, 18];
+            MineGeneration(nums);
         }
 
+        // Выбрана сложная сложность
         public void hard_click(object sender, RoutedEventArgs e)
         {
+            NewGame();
+
+            numberOfMines = 99;
+            int[,] nums = new int[18, 32];
+            MineGeneration(nums);
+        }
+
+        // Очищает поле и таймер
+        void NewGame()
+        {
             if (sw.IsRunning)
             {
-                sw.Stop();
+                sw.Stop(); // Остановка секундомера
             }
             ugr.Children.Clear();
             timer.Content = "00:00:00";
-            i = 30;
-            j = 16;
-            m = 99;
-            nums = new int[32, 18];
             status = 0;
-            mi();
         }
 
-        void mi() 
+        // Создание поля
+        void MineGeneration(int[,] nums) 
         {
-            int r, c; 
-            int n = 0;  
-            int k;      
+            // Создание поля чистого поля
+            CreatingABlankField(nums);
+            // Добавление мин
+            AddingMines(nums);
+            // Заполнение оставшихся ячеек количеством мин вокруг
+            AddingMinesCount(nums);
 
-            for (r = 0; r <= i + 1; r++)
-            {
-                nums[r, 0] = -3;
-                nums[r, j + 1] = -3;
-            }
+            // Изменение размеров окна
+            Window window = Application.Current.MainWindow;
+            window.Width = 40 * nums.GetLength(1) + nums.GetLength(1) * 2 + 200;
+            window.Height = 40 * nums.GetLength(0) + nums.GetLength(0) * 2 + 200;
 
-            for (c = 0; c <= j + 1; c++)
-            {
-                nums[0, c] = -3;
-                nums[i + 1, c] = -3;
-            }
-
-            for (r = 1; r <= i; r++)
-                for (c = 1; c <= j; c++)
-                    nums[r, c] = 0;
-
-            Random rnd = new Random();
-            do
-            {
-                r = rnd.Next(1, i);
-                c = rnd.Next(1, j);
-                k = 0;
-                if (r <= i + 1 && c <= j + 1 && r != 0 && c != 0)
-                {
-                    if (nums[r, c] != 9)
-                    {
-                        if (nums[r - 1, c - 1] != 9) k++;
-                        if (nums[r - 1, c] != 9) k++;
-                        if (nums[r - 1, c + 1] != 9) k++;
-                        if (nums[r, c - 1] != 9) k++;
-                        if (nums[r, c + 1] != 9) k++;
-                        if (nums[r + 1, c - 1] != 9) k++;
-                        if (nums[r + 1, c] != 9) k++;
-                        if (nums[r + 1, c + 1] != 9) k++; 
-                    }
-                }
-                if (k != 0)
-                {
-                    nums[r, c] = 9;
-                    n++;
-                }
-            }
-            while (n != m);
-
-            for (r = 1; r <= i + 1; r++)
-            {
-                for (c = 1; c <= j + 1; c++)
-                {
-                    k = 0;
-                    if (nums[r, c] != 9 && nums[r, c] != -3)
-                    {
-                        k = 0;
-
-                        if (nums[r - 1, c - 1] == 9) k++;
-                        if (nums[r - 1, c] == 9) k++;
-                        if (nums[r - 1, c + 1] == 9) k++; 
-                        if (nums[r, c - 1] == 9) k++;
-                        if (nums[r, c + 1] == 9) k++;
-                        if (nums[r + 1, c - 1] == 9) k++;
-                        if (nums[r + 1, c] == 9) k++;
-                        if (nums[r + 1, c + 1] == 9) k++;
-
-                        nums[r, c] = k;
-                    }
-                }
-            }
-            ugr.Width = 40 * i + i*2;
-            ugr.Height = 40 * j + j*2;
-            ugr.Rows = j;
-            ugr.Columns = i;
+            // Изменение размеров поля
+            ugr.Width = 40 * nums.GetLength(1) + nums.GetLength(1) * 2;
+            ugr.Height = 40 * nums.GetLength(0) + nums.GetLength(0) * 2;
+            ugr.Rows = nums.GetLength(0) - 2;
+            ugr.Columns = nums.GetLength(1) - 2;
             ugr.Margin = new Thickness(5);
             diff.Text = " ";
 
-            for (int g = 1; g <= i; g++)
+            // Добавление кнопок
+            NewButtons(nums);
+
+            numberOfOpenCells = 0; // Обнуление количества открытых ячеек
+        }
+
+        void CreatingABlankField(int[,] nums)
+        {
+            // Заполнение краёв массива
+            for (int i = 0; i < nums.GetLength(1); i++) // Верх и низ
             {
-                 for (int h = 1; h <= j; h++)
-                 {
+                nums[0, i] = edgesValue;
+                nums[nums.GetLength(0) - 1, i] = edgesValue;
+            }
+
+            for (int i = 0; i < nums.GetLength(0); i++) // Право и лево
+            {
+                nums[i, 0] = edgesValue;
+                nums[i, nums.GetLength(1) - 1] = edgesValue;
+            }
+
+            for (int i = 1; i < nums.GetLength(0) - 1; i++)
+                for (int j = 1; j < nums.GetLength(1) - 1; j++)
+                    nums[i, j] = 0;
+        }
+
+        // Добавляет мины
+        void AddingMines(int[,] nums)
+        {
+            Random rnd = new Random();
+
+            int n = 0;
+
+            // Продолжается пока не поставится нужное количество мин
+            while (n != numberOfMines)
+            {
+                int randomColumn = rnd.Next(1, nums.GetLength(1) - 1);
+                int randomRow = rnd.Next(1, nums.GetLength(0) - 1);
+
+                // Если в ячейке нет мины, то добавляется новая
+                if (nums[randomRow, randomColumn] != mineValue)
+                {
+                    nums[randomRow, randomColumn] = mineValue;
+                    n++;
+                }
+            }
+        }
+
+        // Заполняет оставшиеся 
+        void AddingMinesCount(int[,] nums)
+        {
+            for (int i = 1; i < nums.GetLength(0) - 1; i++)
+            {
+                for (int j = 1; j < nums.GetLength(1) - 1; j++)
+                {
+                    if (nums[i, j] != mineValue && nums[i, j] != edgesValue)
+                    {
+                        nums[i, j] = SearchValueAround(nums, i, j, mineValue);
+                    }
+                }
+            }
+        }
+
+        // Ищет количество мин вокруг заданной ячейки
+        int SearchValueAround(int[,] nums, int row, int column, int value)
+        {
+            int k = 0;
+
+            if (nums[row - 1, column - 1] == value) k++;
+            if (nums[row - 1, column] == value) k++;
+            if (nums[row - 1, column + 1] == value) k++; 
+            if (nums[row, column - 1] == value) k++;
+            if (nums[row, column + 1] == value) k++;
+            if (nums[row + 1, column - 1] == value) k++;
+            if (nums[row + 1, column] == value) k++;
+            if (nums[row + 1, column + 1] == value) k++;
+
+            return k;
+        }
+
+        // Добавляет новые кнопки
+        void NewButtons(int[,] nums)
+        {
+            buttons = new Button[nums.GetLength(0) - 2, nums.GetLength(1) - 2];
+
+            for (int i = 1; i < nums.GetLength(0) - 1; i++)
+            {
+                for (int j = 1; j < nums.GetLength(1) - 1; j++)
+                {
                     Button btn = new Button();
-                    btn.Tag = nums[g, h];
+                    btn.Tag = nums[i, j];
                     btn.Width = 40;
                     btn.Height = 40;
                     btn.Content = " ";
                     btn.Margin = new Thickness(1);
                     ugr.Children.Add(btn);
                     btn.PreviewMouseDown += Btn_MouseDown;
-                 }
+
+                    buttons[i - 1, j - 1] = btn;
+                }
             }
 
-            kNums = 0;
+            originalContentValue = buttons[0, 0].Content;
         }
 
         private void Btn_MouseDown(object sender, MouseButtonEventArgs e)
         {
+
+            int row = 0;
+            int column = 0;
+            for (int i = 0; i < buttons.GetLength(0); i++)
+            {
+                bool buttonFound = false;
+
+                for (int j = 0; j < buttons.GetLength(1); j++)
+                    if (buttons[i, j] == sender)
+                    {
+                        row = i;
+                        column = j;
+                        buttonFound = true;
+                        break;
+                    }
+
+                if (buttonFound) break;
+            }
+
+            // Если нажата ЛКМ
             if (e.LeftButton == MouseButtonState.Pressed)
             {
-                BitmapImage mine = new BitmapImage(new Uri(@"pack://application:,,,/img/Mine.jpg", UriKind.Absolute));
-                int n = (int)((Button)sender).Tag;
-                     
-                if (n < 9 && n != -3)
-                {
-                    if (status == 0)
-                    {
-                        status = 1;
-                    }
-                    if (status == 2)
-                    {
-                        ((Button)sender).IsEnabled = false;
-                        return;
-                    }
-                    ((Button)sender).Background = Brushes.White;
-                    ((Button)sender).Foreground = Brushes.Red;
-                    ((Button)sender).FontSize = 20;
-                    ((Button)sender).Content = n.ToString();
-                    kNums++;
-                    ((Button)sender).IsEnabled = false;
+                // Если на кнопке стоит флажок, то кнопка не нажимается
+                if (((Button)sender).Content != originalContentValue)
+                    return;
 
-                    if (!sw.IsRunning)
-                    {
-                        sw.Start();
-                        dt.Start();
-                    }
-                }
+                int n = (int)((Button)sender).Tag; // Значение кнопки
 
-                if (kNums == i * j - m)
+                if (n == mineValue) // Если мина
+                    IsMine(row, column);
+                else if (n == 0) // Если пусто
+                    AutoOpen(row, column);
+                else // Если число
+                    IsNumber(row, column);
+
+                if (numberOfOpenCells == ugr.Columns * ugr.Rows - numberOfMines) // Если все кнопки открыты
                 {
-                    if (status == 2)
-                    {
-                        ((Button)sender).IsEnabled = false;
-                        return;
-                    } 
-                    else if (status == 1)
-                    {
-                        status = 2;
-                    }
+                    status = 2;
                     sw.Stop();
                     MessageBox.Show("Поздравляем! вы выиграли! Выберите сложность, чтобы начать новую игру\n" + "Время: " + currentTime);
-                }
 
-                if (n == 9)
-                {
-                    if (status == 2)
+                    // Выключение всех кнопок
+                    foreach (Button button in ugr.Children)
                     {
-                        ((Button)sender).IsEnabled = false;
-                        return;
+                        button.IsEnabled = false;
                     }
-                    Image img = new Image();
-                    img.Source = mine;
-                    StackPanel stackPnl = new StackPanel();
-                    stackPnl.Margin = new Thickness(1);
-                    stackPnl.Children.Add(img);
-                    ((Button)sender).Content = stackPnl;
-                    if (sw.IsRunning)
-                    {
-                        sw.Stop();
-                    }
-                    MessageBox.Show("Вы проиграли. Выберите сложность, чтобы начать новую игру");
-                    kNums = 0;
-                    status = 2;
-                    ((Button)sender).IsEnabled = false;
                 }
             }
-           
+
+            // Если нажата ПКМ
             if (e.RightButton == MouseButtonState.Pressed)
             {
-                if (status == 2)
-                {
-                    ((Button)sender).IsEnabled = false;
-                    return;
-                }
-                BitmapImage mark = new BitmapImage(new Uri(@"pack://application:,,,/img/Mark.png", UriKind.Absolute));
-                Image img = new Image();
-                img.Source = mark;
-                StackPanel stackPnl = new StackPanel();
-                stackPnl.Margin = new Thickness(1);
-                stackPnl.Children.Add(img);
-                ((Button)sender).Content = stackPnl;
+                if (((Button)sender).Content != originalContentValue) // Если флажок стоит
+                    ((Button)sender).Content = originalContentValue;
+                else // Если кнопка пустая
+                    AddImage(((Button)sender), @"pack://application:,,,/img/Mark.png");
+
+                markContentValue = ((Button)sender).Content;
             }
         }
+
+        // Ставит картинку мины на кнопку и завершает игру
+        void IsMine(int row, int column)
+        {
+            if (sw.IsRunning)
+            {
+                sw.Stop();
+            }
+
+            MessageBox.Show("Вы проиграли. Выберите сложность, чтобы начать новую игру");
+            numberOfOpenCells = 0;
+            status = 2;
+            // Выключение всех кнопок
+            foreach (Button button in ugr.Children)
+            {
+                button.IsEnabled = false;
+
+                // Вывод мин
+                if ((int)button.Tag == mineValue && button.Content == originalContentValue) // Если в кнопке была мина и не было флажка
+                {
+                    AddImage(button, @"pack://application:,,,/img/Mine.jpg");
+                }
+            }
+        }
+
+        // Устанавливает изображения на кнопку
+        void AddImage(Button button, string path)
+        {
+            // Установка изображения мины на кнопку
+            BitmapImage incorrectMark = new BitmapImage(new Uri(path, UriKind.Absolute));
+            Image img = new Image();
+            img.Source = incorrectMark;
+            StackPanel stackPnl = new StackPanel();
+            stackPnl.Margin = new Thickness(1);
+            stackPnl.Children.Add(img);
+            button.Content = stackPnl;
+
+            button.Content = stackPnl;
+        }
+
+        // Открывает соседние ячейки если текущая оказалась 0
+        void AutoOpen(int row, int column)
+        {
+            int[,] indexes = SearchValueButtonAround(row, column, 0);
+
+            // Открытие нынешней кнопки
+            IsNumber(row, column);
+
+            // Открытие соседних кнопок, если они не нули
+            if (row != 0 && column != 0 && indexes[0,0] == -1) IsNumber(row - 1, column - 1);
+            if (row != 0 && indexes[1,0] == -1) IsNumber(row - 1, column);
+            if (row != 0 && column != buttons.GetLength(1) - 1 && indexes[2,0] == -1) IsNumber(row - 1, column + 1);
+            if (column != 0 && indexes[3,0] == -1) IsNumber(row, column - 1);
+            if (column != buttons.GetLength(1) - 1 && indexes[4,0] == -1) IsNumber(row, column + 1);
+            if (row != buttons.GetLength(0) - 1 && column != 0 && indexes[5,0] == -1) IsNumber(row + 1, column - 1);
+            if (row != buttons.GetLength(0) - 1 && indexes[6,0] == -1) IsNumber(row + 1, column);
+            if (row != buttons.GetLength(0) - 1 && column != buttons.GetLength(1) - 1 && indexes[7,0] == -1) IsNumber(row + 1, column + 1);
+
+            // Вызов AutoOpen для соседних кнопок с нулевым значением
+            for (int i = 0; i < indexes.GetLength(0); i++)
+                if (indexes[i, 0] != -1)
+                {
+                    AutoOpen(indexes[i, 0], indexes[i, 1]);
+                }
+        }
+
+        // Ищет индексы элементов с искомым значением вокруг заданной ячейки
+        int[,] SearchValueButtonAround(int row, int column, int value)
+        {
+            int[,] indexes = new int[8, 2];
+
+            // Заполнение массива, чтобы отследить изменение значений
+            for (int i = 0; i < indexes.GetLength(0); i++)
+                for (int j = 0; j < indexes.GetLength(1); j++)
+                    indexes[i, j] = -1;
+
+            if (row != 0 && column != 0) // Если кнопка не на границе массива
+                if ((int)buttons[row - 1, column - 1].Tag == value && buttons[row - 1, column - 1].IsEnabled) // Если значение кнопки равно искомому и кнопка не нажата
+                {
+                    indexes[0, 0] = row - 1;
+                    indexes[0, 1] = column - 1;
+                }
+            if (row != 0)
+                if ((int)buttons[row - 1, column].Tag == value && buttons[row - 1, column].IsEnabled)
+                {
+                    indexes[1, 0] = row - 1;
+                    indexes[1, 1] = column;
+                }
+            if (row != 0 && column != buttons.GetLength(1) - 1)
+                if ((int)buttons[row - 1, column + 1].Tag == value && buttons[row - 1, column + 1].IsEnabled)
+                {
+                    indexes[2, 0] = row - 1;
+                    indexes[2, 1] = column + 1;
+                }
+            if (column != 0)
+                if ((int)buttons[row, column - 1].Tag == value && buttons[row, column - 1].IsEnabled)
+                {
+                    indexes[3, 0] = row;
+                    indexes[3, 1] = column - 1;
+                }
+            if (column != buttons.GetLength(1) - 1)
+                if ((int)buttons[row, column + 1].Tag == value && buttons[row, column + 1].IsEnabled)
+                {
+                    indexes[4, 0] = row;
+                    indexes[4, 1] = column + 1;
+                }
+            if (row != buttons.GetLength(0) - 1 && column != 0)
+                if ((int)buttons[row + 1, column - 1].Tag == value && buttons[row + 1, column - 1].IsEnabled)
+                {
+                    indexes[5, 0] = row + 1;
+                    indexes[5, 1] = column - 1;
+                }
+            if (row != buttons.GetLength(0) - 1)
+                if ((int)buttons[row + 1, column].Tag == value && buttons[row + 1, column].IsEnabled)
+                {
+                    indexes[6, 0] = row + 1;
+                    indexes[6, 1] = column;
+                }
+            if (row != buttons.GetLength(0) - 1 && column != buttons.GetLength(1) - 1)
+                if ((int)buttons[row + 1, column + 1].Tag == value && buttons[row + 1, column + 1].IsEnabled)
+                {
+                    indexes[7, 0] = row + 1;
+                    indexes[7, 1] = column + 1;
+                }
+
+            return indexes;
+        }
+
+        void IsNumber(int row, int column)
+        {
+            // Если кнопка уже была открыта (чтобы не писать кучу условий в AutoOpen)
+            if (buttons[row, column].IsEnabled == false)
+                return;
+
+            status = status == 0 ? 1 : status;
+            int n = (int)buttons[row, column].Tag;
+
+            // Добавление числа на кнопку
+            buttons[row, column].Background = Brushes.White;
+            buttons[row, column].Foreground = Brushes.Red;
+            buttons[row, column].FontSize = 20;
+            buttons[row, column].Content = n == 0 ? "" : n.ToString();
+            buttons[row, column].IsEnabled = false;
+
+            numberOfOpenCells++;
+
+            // Запуск секундомера
+            if (!sw.IsRunning)
+            {
+                sw.Start();
+                dt.Start();
+            }
+        }
+
     }
 }
