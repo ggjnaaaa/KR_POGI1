@@ -217,11 +217,14 @@ namespace WpfApp1
             originalContentValue = buttons[0, 0].Content;
         }
 
+        // Обработка нажатия кнопки мышки
         private void Btn_MouseDown(object sender, MouseButtonEventArgs e)
         {
-
+            // Местоположение кнопки
             int row = 0;
             int column = 0;
+
+            // Поиск нажатой кнопки в массиве кнопок
             for (int i = 0; i < buttons.GetLength(0); i++)
             {
                 bool buttonFound = false;
@@ -407,6 +410,7 @@ namespace WpfApp1
             return indexes;
         }
 
+        // Открывает ячейку если в ней число и она не открыта
         void IsNumber(int row, int column)
         {
             // Если кнопка уже была открыта (чтобы не писать кучу условий в AutoOpen)
@@ -432,6 +436,5 @@ namespace WpfApp1
                 dt.Start();
             }
         }
-
     }
 }
