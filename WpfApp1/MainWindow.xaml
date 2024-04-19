@@ -3,20 +3,130 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
         xmlns:local="clr-namespace:WpfApp1"
         mc:Ignorable="d"
-        Title="Сапёр" Height="244" Width="656" WindowStyle="ToolWindow">
-    <Grid x:Name="start" Height="auto" Width="auto">
-        <TextBlock x:Name="diff" Text="Выберите сложность!"  Width="480" Height="80" FontSize="48" VerticalAlignment="Center" HorizontalAlignment="Center"/>
-        <Grid Background="LightGray" Height="30" VerticalAlignment="Bottom">
-            <Button Content="Легко (10 х 10, 10 мин)" Height="30" Width="210" FontSize="18" Click="eazy_click" HorizontalAlignment="Left" VerticalAlignment="Bottom"/>
-            <Button Content="Средне (16 х 16, 40 мин)" Height="30" Width="210" FontSize="18" Click="medium_click" HorizontalAlignment="Center" VerticalAlignment="Bottom"/>
-            <Button Content="Сложно (30 х 16, 99 мин)" Height="30" Width="210" FontSize="18" Click="hard_click" VerticalAlignment="Bottom" HorizontalAlignment="Right"/>
+        Title="Сапёр" WindowStyle="ToolWindow"
+        Height="{Binding WindowHeight, Mode=TwoWay}" Width="{Binding WindowWidth, Mode=TwoWay}"
+        ResizeMode="NoResize"
+        MaxHeight="775" MaxWidth="1440"
+        FontFamily="Arial" FontSize="15">
+    <Window.DataContext>
+        <local:GameViewModel/>
+    </Window.DataContext>
+    <Window.Resources>
+        <local:NumberToImageConverter x:Key="NumberToImageConverter"/>
+        <local:CellValueToImageConverter x:Key="CellValueToImageConverter"/>
+        <local:EnabledButtonStatusToImageConverter x:Key="EnabledButtonStatusToImageConverter"/>
+    </Window.Resources>
+    <Grid Background="#c4c4c4">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="30"/>
+            <RowDefinition Height="80"/>
+            <RowDefinition/>
+        </Grid.RowDefinitions>
+
+        <!--Верхняя панель кнопок-->
+        <Grid Grid.Row="0" Margin="0, 0, 0, 5" Background="WhiteSmoke">
+            <Button Margin="20, 2, 0, 3" HorizontalAlignment="Left" Width="110" Command="{Binding SmileCommand}">Новая игра</Button>
+            <Button Margin="137, 2, 0, 3" HorizontalAlignment="Left" Width="107" Command="{Binding SettingsCommand}">Параметры</Button>
         </Grid>
-        <Grid Background="LightGray" Height="53" VerticalAlignment="Top">
-            <TextBlock x:Name="info" Text="Для новой игры выберите сложность. Секундомер включится при нажатии кнопки на поле" FontSize="16" Margin="10,2,120,0" TextWrapping="Wrap"/>
-            <Label Name="timer" Content="00:00:00" HorizontalAlignment="Right" Width="80" Height="25" FontSize="14" Background="Gray"/>
-        </Grid>
-        <UniformGrid x:Name="ugr" Background="Transparent" Margin="10,74,10,35"/>
+
+        <!--Панель с кнопкой новой игры, счётчиком мин и таймером-->
+        <Border  Grid.Row="1" BorderThickness="5" BorderBrush="#737373" Margin="20, 0">
+            <Grid>
+                <local:SmileButton Height="63" Width="63" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                  Command="{Binding SmileCommand}"
+                                  IsWin="{Binding IsWin}"
+                                  IsLose="{Binding IsLose}"
+                                  IsWow="{Binding IsWow}"/>
+                <ItemsControl Margin="10,4,0,4" Width="105" HorizontalAlignment="Left" Background="Black"
+                              ItemsSource="{Binding CountFlags, Converter={StaticResource NumberToImageConverter }, Mode=OneWay}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <StackPanel Orientation="Horizontal"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Image Source="{Binding}"  VerticalAlignment="Stretch"/>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <ItemsControl Margin="0,4,10,4" Width="105" HorizontalAlignment="Right" Background="Black"
+                              ItemsSource="{Binding Timer, Converter={StaticResource NumberToImageConverter }, Mode=OneWay}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <StackPanel Orientation="Horizontal"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Image Source="{Binding}" VerticalAlignment="Stretch"/>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </Grid>
+        </Border>
+
+        <!--Панель игрового поля-->
+        <Border  Grid.Row="2" BorderThickness="5" BorderBrush="#737373" Margin="20,10,20,40">
+            <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+                <Grid Margin="3" Background="DarkGray">
+                    <ItemsControl ItemsSource="{Binding GameField}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <UniformGrid Rows="{Binding GameField.Height}" Columns="{Binding GameField.Width}" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Button HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                                        Tag="{Binding Tag}" IsEnabled="{Binding IsEnabled}"
+                                        Width="{Binding BtnWidth}" Height="{Binding BtnHeight}">
+                                    <i:Interaction.Triggers>
+                                        <i:EventTrigger EventName="PreviewMouseRightButtonDown">
+                                        <i:InvokeCommandAction Command="{Binding DataContext.RightMouseCellUpCommand, 
+                                                                RelativeSource={RelativeSource AncestorType={x:Type ItemsControl}}}"
+                                                                CommandParameter="{Binding Tag, RelativeSource={RelativeSource AncestorType={x:Type Button}}}" />
+                                        </i:EventTrigger>
+                                        <i:EventTrigger EventName="PreviewMouseLeftButtonDown">
+                                        <i:InvokeCommandAction Command="{Binding DataContext.LeftMouseCellDownCommand, 
+                                                        RelativeSource={RelativeSource AncestorType={x:Type ItemsControl}}}"
+                                                               CommandParameter="{Binding Tag, RelativeSource={RelativeSource AncestorType={x:Type Button}}}"/>
+                                        </i:EventTrigger>
+                                        <i:EventTrigger EventName="PreviewMouseLeftButtonUp">
+                                        <i:InvokeCommandAction Command="{Binding DataContext.LeftMouseCellUpCommand, 
+                                                        RelativeSource={RelativeSource AncestorType={x:Type ItemsControl}}}"
+                                                               CommandParameter="{Binding Tag, RelativeSource={RelativeSource AncestorType={x:Type Button}}}" />
+                                        </i:EventTrigger>
+                                    </i:Interaction.Triggers>
+                                    <Button.Style>
+                                        <Style TargetType="Button">
+                                            <Style.Triggers>
+                                                <Trigger Property="IsEnabled" Value="True">
+                                                    <Setter Property="Content">
+                                                        <Setter.Value>
+                                                            <Image Source="{Binding ButtonStatus, Converter={StaticResource EnabledButtonStatusToImageConverter}, Mode=OneWay}"/>
+                                                        </Setter.Value>
+                                                    </Setter>
+                                                </Trigger>
+                                                <Trigger Property="IsEnabled" Value="False">
+                                                    <Setter Property="Content">
+                                                        <Setter.Value>
+                                                            <Image Source="{Binding Value, Converter={StaticResource CellValueToImageConverter}, Mode=OneWay}"/>
+                                                        </Setter.Value>
+                                                    </Setter>
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </Grid>
+            </ScrollViewer>
+        </Border>
     </Grid>
 </Window>
